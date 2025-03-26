@@ -4,3 +4,6 @@ whitenoise
 psycopg2-binary
 requests
 urllib3
+psycopg2
+python-decouple
+python-dotenv
