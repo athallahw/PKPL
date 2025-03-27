@@ -21,5 +21,6 @@ from main import views
 app_name = 'main'
 
 urlpatterns = [
-    path('', views.playing_with_neon_view, name='neon_data'),
+    path('', views.landing_page, name='landing_page'),
+    # path('', views.playing_with_neon_view, name='neon_data'),
 ]

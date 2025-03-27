@@ -1,44 +1,155 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-    <title>Playing with Neon</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PKPL - Pelacak Kesehatan Perbaiki Lifestyle</title>
     <style>
-        table {
-            border-collapse: collapse;
-            width: 50%;
-            margin: 20px auto;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
         }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
-        th {
-            background-color: #f2f2f2;
+
+        .welcome-text {
+            font-size: 24px;
+            color: #333;
         }
-        h1 {
-            text-align: center;
+
+        .icons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .daily-check {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .check-button {
+            background-color: #4285f4;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .features-section h2 {
+            margin-bottom: 15px;
+        }
+
+        .feature-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+        }
+
+        .articles-section {
+            margin-top: 20px;
+        }
+
+        .article-card {
+            background-color: white;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .article-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .dots {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: #4285f4;
+            border-radius: 50%;
+            opacity: 0.5;
+        }
+
+        .dot.active {
+            opacity: 1;
         }
     </style>
 </head>
 <body>
-    <h1>Data dari Neon Database</h1>
-    
-    {% if data %}
-        <table>
-            <tr>
-                <th>Nama</th>
-                <th>Nilai</th>
-            </tr>
-            {% for item in data %}
-                <tr>
-                    <td>{{ item.name }}</td>
-                    <td>{{ item.value }}</td>
-                </tr>
-            {% endfor %}
-        </table>
-    {% else %}
-        <p style="text-align: center;">Tidak ada data yang ditemukan.</p>
-    {% endif %}
+    <div class="header">
+        <div class="welcome-text">Halo, {{ user_name }}</div>
+        <div class="icons">
+            <img src="/static/bell-icon.png" alt="Notifikasi" width="24">
+            <img src="/static/profile-icon.png" alt="Profil" width="24">
+        </div>
+    </div>
+
+    <div class="daily-check">
+        <div>
+            <p>Jangan lupa untuk mengisi kuesioner keshatan harian!</p>
+        </div>
+        <button class="check-button">
+            <span>✏️</span>
+            Daily Check
+        </button>
+    </div>
+
+    <div class="features-section">
+        <h2>Fitur</h2>
+        <div class="feature-card">
+            <img src="/static/screening-icon.png" alt="Skrining" class="feature-icon">
+            <span>Tukar Poin</span>
+        </div>
+        <div class="feature-card">
+            <img src="/static/report-icon.png" alt="Lapor" class="feature-icon">
+            <span>Isi Kuesioner</span>
+        </div>
+    </div>
+
+    <div class="articles-section">
+        <h2>Artikel Terkini</h2>
+        <div class="article-card">
+            <img src="/static/tbc-article.png" alt="Artikel TBC" class="article-image">
+        </div>
+        <div class="dots">
+            <span class="dot active"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+        </div>
+    </div>
 </body>
 </html>
