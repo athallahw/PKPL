@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'main',
     'authorization',
     'voucher',
+    'kuesioner',
 ]
 
 MIDDLEWARE = [

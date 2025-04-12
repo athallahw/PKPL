@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PKPL - Kuesioner Harian</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background-color: #4285f4;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        .form-text {
+            font-size: 0.875rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background-color: #4285f4;
+            color: white;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: -10px;
+        }
+
+        .col-md-6 {
+            flex: 0 0 50%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 768px) {
+            .col-md-6 {
+                flex: 0 0 100%;
+            }
+        }
+
+        .invalid-feedback {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: -8px;
+            margin-bottom: 10px;
+        }
+
+        .form-range {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h3 style="margin: 0;">Kuesioner Harian PKPL</h3>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="POST" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <h5>Informasi Dasar</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="weight" class="form-label">Berat Badan (kg)</label>
+                                <input type="number" step="0.1" class="form-control" id="weight" name="weight" required>
+                                <div class="invalid-feedback">Mohon masukkan berat badan Anda.</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="height" class="form-label">Tinggi Badan (cm)</label>
+                                <input type="number" step="0.1" class="form-control" id="height" name="height" required>
+                                <div class="invalid-feedback">Mohon masukkan tinggi badan Anda.</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="gender" class="form-label">Jenis Kelamin</label>
+                                <select class="form-select" id="gender" name="gender" required>
+                                    <option value="">Pilih jenis kelamin</option>
+                                    <option value="pria">Pria</option>
+                                    <option value="wanita">Wanita</option>
+                                </select>
+                                <div class="invalid-feedback">Mohon pilih jenis kelamin Anda.</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="age" class="form-label">Usia (tahun)</label>
+                                <input type="number" class="form-control" id="age" name="age" required>
+                                <div class="invalid-feedback">Mohon masukkan usia Anda.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h5>Informasi Gaya Hidup</h5>
+                        
+                        <div class="mb-3">
+                            <label for="water_intake" class="form-label">Asupan Air (ml)</label>
+                            <input type="number" class="form-control" id="water_intake" name="water_intake" required>
+                            <div class="invalid-feedback">Mohon masukkan asupan air Anda.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="sport_frequency" class="form-label">Frekuensi Olahraga (1.2-1.9)</label>
+                            <input type="number" step="0.1" min="1.2" max="1.9" class="form-control" id="sport_frequency" name="sport_frequency" required>
+                            <div class="form-text">1.2: Sedentary, 1.375: Light, 1.55: Moderate, 1.725: Active, 1.9: Very Active</div>
+                            <div class="invalid-feedback">Mohon masukkan frekuensi olahraga Anda.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="smoke_frequency" class="form-label">Jumlah Rokok per Hari</label>
+                            <input type="number" class="form-control" id="smoke_frequency" name="smoke_frequency" required>
+                            <div class="invalid-feedback">Mohon masukkan jumlah rokok per hari.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="stress_level" class="form-label">Tingkat Stres (1-10)</label>
+                            <input type="range" class="form-range" id="stress_level" name="stress_level" min="1" max="10" required>
+                            <div class="text-center" id="stress_value">5</div>
+                            <div class="invalid-feedback">Mohon pilih tingkat stres Anda.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="alcohol_frequency" class="form-label">Jumlah Minum Alkohol per Minggu</label>
+                            <input type="number" class="form-control" id="alcohol_frequency" name="alcohol_frequency" required>
+                            <div class="invalid-feedback">Mohon masukkan jumlah minum alkohol per minggu.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="daily_calories" class="form-label">Asupan Kalori Harian</label>
+                            <input type="number" class="form-control" id="daily_calories" name="daily_calories" required>
+                            <div class="invalid-feedback">Mohon masukkan asupan kalori harian Anda.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="sleep_amount" class="form-label">Jumlah Tidur (jam)</label>
+                            <input type="number" step="0.5" class="form-control" id="sleep_amount" name="sleep_amount" required>
+                            <div class="invalid-feedback">Mohon masukkan jumlah tidur Anda.</div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Kirim Kuesioner</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Stress level slider value display
+        const stressSlider = document.getElementById('stress_level');
+        const stressValue = document.getElementById('stress_value');
+        
+        stressSlider.addEventListener('input', function() {
+            stressValue.textContent = this.value;
+        });
+
+        // Form validation
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })()
+    </script>
+</body>
+</html> 

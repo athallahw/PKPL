@@ -15,4 +15,5 @@ urlpatterns = [
     path('main/', include('main.urls')),  # Gunakan namespace otomatis dari app_name
 
     path('voucher/', include('voucher.urls')),
+    path('kuesioner/', include('kuesioner.urls')),
 ]
