@@ -1,14 +1,46 @@
 from django.db import models
 
+class Role(models.Model):
+    # No need to create custom id field, Django will create it automatically
+    role_name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.role_name
+
+class Permission(models.Model):
+    permission_name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.permission_name
+
+class Role_Permission(models.Model):
+    role = models.ForeignKey(Role, on_delete=models.CASCADE)
+    permission = models.ForeignKey(Permission, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('role', 'permission')
+        
+    def __str__(self):
+        return f"{self.role.role_name} - {self.permission.permission_name}"
+
 class Pengguna(models.Model):
     email = models.CharField(max_length=255, unique=True)
     password = models.CharField(max_length=255)
+    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
         return self.email
 
+class OTPDevice(models.Model):
+    pengguna = models.OneToOneField(Pengguna, on_delete=models.CASCADE, related_name='otp_device')
+    secret_key = models.CharField(max_length=50)
+    last_verified_counter = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"OTP Device for {self.pengguna.email}"
+
 class Admin(models.Model):
-    # Menggunakan OneToOneField dengan primary_key=True agar 'id' di Admin sama dengan 'id' di Pengguna
     pengguna = models.OneToOneField(
         Pengguna,
         on_delete=models.CASCADE,

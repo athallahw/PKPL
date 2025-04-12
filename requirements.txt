@@ -7,3 +7,4 @@ urllib3
 psycopg2
 python-decouple
 python-dotenv
+pyotp
