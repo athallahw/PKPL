@@ -16,11 +16,17 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from main import views
+from main import views as main_views
+from authorization import views as auth_views
 
 app_name = 'main'
 
 urlpatterns = [
-    path('', views.landing_page, name='landing_page'),
-    # path('', views.playing_with_neon_view, name='neon_data'),
+    path('admin/', admin.site.urls),
+    # Ubah route default ke halaman sign in
+    path('', auth_views.sign_in, name='sign_in'),
+    
+    # Jika masih ingin menyediakan route untuk landing page,
+    # Anda bisa memberikan URL khusus misalnya:
+    path('landing/', main_views.landing_page, name='landing_page'),
 ]
