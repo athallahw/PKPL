@@ -69,9 +69,31 @@
             border: 1px solid #b8daff;
         }
 
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
         .table-responsive {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            color: white;
+            background-color: #4285f4;
+        }
+
+        .btn:hover {
+            background-color: #3367d6;
         }
 
         @media (max-width: 768px) {
@@ -93,9 +115,20 @@
     <div class="container">
         <div class="card">
             <div class="card-header">
-                <h3 style="margin: 0;">Riwayat Kuesioner</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0;">Riwayat Kuesioner</h3>
+                    <a href="{% url 'kuesioner:questionnaire_form' %}" class="btn">Isi Kuesioner Baru</a>
+                </div>
             </div>
             <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
                 {% if questionnaires %}
                     <div class="table-responsive">
                         <table class="table table-striped">

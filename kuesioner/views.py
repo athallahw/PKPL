@@ -25,6 +25,42 @@ def questionnaire_form(request):
                 messages.warning(request, 'Anda sudah mengisi kuesioner hari ini.')
                 return redirect('kuesioner:questionnaire_form')
             
+            # Validate required fields
+            required_fields = [
+                'weight', 'height', 'gender', 'age', 'water_intake',
+                'sport_frequency', 'smoke_frequency', 'stress_level',
+                'alcohol_frequency', 'daily_calories', 'sleep_amount'
+            ]
+            
+            # Check if all required fields are present
+            for field in required_fields:
+                if not request.POST.get(field):
+                    messages.error(request, f'Mohon isi semua field yang diperlukan.')
+                    return redirect('kuesioner:questionnaire_form')
+            
+            # Validate field ranges
+            validations = {
+                'weight': (30, 300),
+                'height': (100, 250),
+                'age': (1, 120),
+                'water_intake': (0, 10000),
+                'sport_frequency': (1.2, 1.9),
+                'smoke_frequency': (0, 100),
+                'alcohol_frequency': (0, 100),
+                'daily_calories': (500, 10000),
+                'sleep_amount': (0, 24)
+            }
+            
+            for field, (min_val, max_val) in validations.items():
+                try:
+                    value = float(request.POST.get(field))
+                    if value < min_val or value > max_val:
+                        messages.error(request, f'Nilai {field} harus antara {min_val} dan {max_val}.')
+                        return redirect('kuesioner:questionnaire_form')
+                except (ValueError, TypeError):
+                    messages.error(request, f'Nilai tidak valid untuk field {field}.')
+                    return redirect('kuesioner:questionnaire_form')
+            
             # Create new questionnaire entry
             DailyQuestionnaire.objects.create(
                 user=user,
@@ -40,8 +76,10 @@ def questionnaire_form(request):
                 daily_calories=int(request.POST.get('daily_calories')),
                 sleep_amount=float(request.POST.get('sleep_amount'))
             )
-            messages.success(request, 'Kuesioner berhasil disimpan!')
-            return redirect('kuesioner:questionnaire_form')
+            
+            # Store success message in session
+            messages.success(request, 'Kuesioner berhasil ditambahkan!')
+            return redirect('kuesioner:questionnaire_history')
         except Exception as e:
             messages.error(request, f'Terjadi kesalahan: {str(e)}')
             return redirect('kuesioner:questionnaire_form')

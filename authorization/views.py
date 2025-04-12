@@ -64,6 +64,12 @@ def sign_in(request):
                     except Normal.DoesNotExist:
                         pass
                 
+                # Clear any existing messages before redirecting
+                storage = messages.get_messages(request)
+                for message in storage:
+                    pass  # Iterating through messages marks them as used
+                storage.used = True
+                
                 return redirect('main:landing_page')
             else:
                 return render(request, 'sign_in.html', {'error': 'Email atau password salah'})
