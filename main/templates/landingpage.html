@@ -165,10 +165,10 @@
             <p>Jangan lupa untuk mengisi kuesioner keshatan harian!</p>
         </div>
         {% if is_logged_in %}
-        <button class="check-button">
+        <a href="{% url 'kuesioner:questionnaire_form' %}" class="check-button">
             <span>✏️</span>
             Daily Check
-        </button>
+        </a>
         {% else %}
         <a href="{% url 'auth:sign_in' %}" class="check-button">
             <span>🔑</span>
@@ -187,7 +187,9 @@
         </div>
         <div class="feature-card">
             <img src="/static/report-icon.png" alt="Lapor" class="feature-icon">
-            <span>Isi Kuesioner</span>
+            <a href="{% url 'kuesioner:questionnaire_form' %}" style="text-decoration: none; color: inherit;">
+                <span>Isi Kuesioner</span>
+            </a>
         </div>
     </div>
 
