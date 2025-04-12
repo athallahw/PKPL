@@ -1,35 +1,33 @@
 from django.db import connection
 from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-
-# def playing_with_neon_view(request):
-#     # Fetch data from the 'playing_with_neon' table
-#     with connection.cursor() as cursor:
-#         cursor.execute(
-#             """
-#             SELECT name, value
-#             FROM playing_with_neon
-#             """
-#         )
-#         rows = cursor.fetchall()
-
-#     # Konversi hasil query ke format yang lebih mudah digunakan di template
-#     data = [{'name': row[0], 'value': row[1]} for row in rows]
-    
-#     # Print the data in the terminal (opsional)
-#     for row in rows:
-#         print(f"Name: {row[0]}, Value: {row[1]}")
-    
-#     # Render template dengan data
-#     return render(request, 'landingpage.html', {'data': data})
+from authorization.models import Pengguna  # Pastikan ini sesuai dengan model yang Anda buat
 
 def landing_page(request):
-    # Mengambil display_name dari session (username dari email)
-    display_name = request.session.get('display_name', 'User')
+    # Default values
+    is_logged_in = False
+    display_name = "Tamu"
+    
+    # Cek apakah user_id ada di session
+    if 'user_id' in request.session:
+        user_id = request.session.get('user_id')
+        
+        # Validasi apakah user masih ada di database
+        try:
+            # Gunakan model untuk memverifikasi user
+            pengguna = Pengguna.objects.get(id=user_id)
+            is_logged_in = True
+            display_name = request.session.get('display_name', pengguna.email.split('@')[0])
+        except Pengguna.DoesNotExist:
+            # Jika user tidak ditemukan, hapus session
+            if 'user_id' in request.session:
+                del request.session['user_id']
+            if 'user_email' in request.session:
+                del request.session['user_email']
+            if 'display_name' in request.session:
+                del request.session['display_name']
     
     context = {
-        'user_name': display_name
+        'user_name': display_name,
+        'is_logged_in': is_logged_in
     }
     return render(request, 'landingpage.html', context)
-
-
