@@ -1,0 +1,221 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Voucher Alat Kesehatan - PKPL</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .welcome-text {
+            font-size: 24px;
+            color: #333;
+        }
+
+        .icons {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .point-display {
+            background-color: #fff;
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .point-number {
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .logout-button {
+            background-color: #f44336;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 15px;
+            background-color: #f1f1f1;
+            color: #333;
+            text-decoration: none;
+            border-radius: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tab {
+            padding: 10px 15px;
+            text-align: center;
+            white-space: nowrap;
+            margin-right: 10px;
+            border-radius: 20px;
+        }
+
+        .tab.active {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+
+        .voucher-item {
+            background-color: #fff;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .voucher-circle {
+            width: 100%;
+            height: 120px;
+            background-color: #FFD700;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .voucher-content {
+            padding: 15px;
+            position: relative;
+        }
+
+        .voucher-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .voucher-desc {
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .voucher-points {
+            font-weight: bold;
+            color: #FF6600;
+            margin-bottom: 15px;
+        }
+
+        .voucher-button {
+            background-color: #4285f4;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .voucher-button.disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="welcome-text">Halo, {{ user_name }}</div>
+        <div class="icons">
+            {% if is_logged_in %}
+            <div class="point-display">
+                <span>🏆</span>
+                <span class="point-number">{{ poin }} poin</span>
+            </div>
+            {% endif %}
+            <a href="{% url 'auth:logout' %}" class="logout-button">Logout</a>
+        </div>
+    </div>
+    
+    <a href="{% url 'main:landing_page' %}" class="back-button">← Kembali ke Beranda</a>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="tabs">
+        <div class="tab active">Semua Voucher</div>
+        <div class="tab"><a href="{% url 'voucher:riwayat_penukaran' %}" style="text-decoration: none; color: inherit;">Riwayat Penukaran</a></div>
+    </div>
+    
+    <h2>Daftar Voucher Alat Kesehatan</h2>
+    
+    {% for voucher in vouchers %}
+    <div class="voucher-item">
+        <div class="voucher-circle">
+            <div style="text-align: center;">
+                <div style="font-size: 18px; font-weight: bold; color: #7E1717;">Potongan Spesial</div>
+                <div style="font-size: 24px; font-weight: bold; color: #7E1717;">Rp {{ voucher.jumlah_potongan }}</div>
+            </div>
+        </div>
+        <div class="voucher-content">
+            <div class="voucher-title">{{ voucher.nama_voucher }}</div>
+            <div class="voucher-desc">Voucher untuk alat kesehatan berkualitas. Tukarkan sekarang!</div>
+            <div class="voucher-points">Tukar dengan {{ voucher.jumlah_potongan }} poin</div>
+            
+            {% if is_logged_in %}
+                {% if poin >= voucher.jumlah_potongan %}
+                    <a href="{% url 'voucher:tukar_voucher' voucher.id_voucher %}" class="voucher-button">Tukar Sekarang</a>
+                {% else %}
+                    <span class="voucher-button disabled">Poin Tidak Cukup</span>
+                {% endif %}
+            {% else %}
+                <a href="{% url 'auth:sign_in' %}" class="voucher-button">Login untuk Tukar</a>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <p>Tidak ada voucher yang tersedia saat ini.</p>
+    {% endfor %}
+</body>
+</html>

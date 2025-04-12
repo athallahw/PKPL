@@ -181,7 +181,9 @@
         <h2>Fitur</h2>
         <div class="feature-card">
             <img src="/static/screening-icon.png" alt="Skrining" class="feature-icon">
-            <span>Tukar Poin</span>
+            <a href="{% url 'voucher:daftar_voucher' %}" style="text-decoration: none; color: inherit;">
+                <span>Tukar Poin</span>
+            </a>
         </div>
         <div class="feature-card">
             <img src="/static/report-icon.png" alt="Lapor" class="feature-icon">

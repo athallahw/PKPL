@@ -13,4 +13,6 @@ urlpatterns = [
     
     # Untuk URL main yang bukan homepage
     path('main/', include('main.urls')),  # Gunakan namespace otomatis dari app_name
+
+    path('voucher/', include('voucher.urls')),
 ]

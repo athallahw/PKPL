@@ -1,0 +1,116 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konfirmasi Penukaran Voucher - PKPL</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 15px;
+            background-color: #f1f1f1;
+            color: #333;
+            text-decoration: none;
+            border-radius: 20px;
+        }
+
+        .confirmation-box {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        .voucher-details {
+            margin-bottom: 20px;
+        }
+
+        .voucher-name {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .points-info {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .confirm-button {
+            background-color: #4285f4;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .cancel-button {
+            background-color: #f1f1f1;
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+            text-align: center;
+            display: block;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="{% url 'voucher:daftar_voucher' %}" class="back-button">← Kembali ke Daftar Voucher</a>
+    
+    <div class="confirmation-box">
+        <h2>Konfirmasi Penukaran Voucher</h2>
+        
+        <div class="voucher-details">
+            <p class="voucher-name">{{ voucher.nama_voucher }}</p>
+            <p>Voucher untuk alat kesehatan berkualitas.</p>
+        </div>
+        
+        <div class="points-info">
+            <span>Poin Anda saat ini</span>
+            <span>{{ poin_user }} poin</span>
+        </div>
+        
+        <div class="points-info">
+            <span>Poin yang dibutuhkan</span>
+            <span>{{ voucher.jumlah_potongan }} poin</span>
+        </div>
+        
+        <div class="points-info">
+            <span>Sisa poin setelah penukaran</span>
+            <span>{{ poin_user|add:"-"|add:voucher.jumlah_potongan }} poin</span>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="confirm-button">Konfirmasi Penukaran</button>
+        </form>
+        
+        <a href="{% url 'voucher:daftar_voucher' %}" class="cancel-button">Batal</a>
+    </div>
+</body>
+</html>

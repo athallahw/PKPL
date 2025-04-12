@@ -1,0 +1,206 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riwayat Penukaran Voucher - PKPL</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .welcome-text {
+            font-size: 24px;
+            color: #333;
+        }
+
+        .icons {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .point-display {
+            background-color: #fff;
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .point-number {
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .logout-button {
+            background-color: #f44336;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 15px;
+            background-color: #f1f1f1;
+            color: #333;
+            text-decoration: none;
+            border-radius: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tab {
+            padding: 10px 15px;
+            text-align: center;
+            white-space: nowrap;
+            margin-right: 10px;
+            border-radius: 20px;
+        }
+
+        .tab.active {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+
+        .history-item {
+            background-color: #fff;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .history-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .history-date {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .history-points {
+            font-weight: bold;
+            color: #FF6600;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-completed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-expired {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="welcome-text">Halo, {{ user_name }}</div>
+        <div class="icons">
+            <div class="point-display">
+                <span>🏆</span>
+                <span class="point-number">{{ poin }} poin</span>
+            </div>
+            <a href="{% url 'auth:logout' %}" class="logout-button">Logout</a>
+        </div>
+    </div>
+    
+    <a href="{% url 'main:landing_page' %}" class="back-button">← Kembali ke Beranda</a>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="tabs">
+        <div class="tab"><a href="{% url 'voucher:daftar_voucher' %}" style="text-decoration: none; color: inherit;">Semua Voucher</a></div>
+        <div class="tab active">Riwayat Penukaran</div>
+    </div>
+    
+    <h2>Riwayat Penukaran Voucher</h2>
+    
+    {% for item in riwayat %}
+    <div class="history-item">
+        <div class="history-title">
+            {{ item.voucher.nama_voucher }}
+            <span class="status-badge status-{{ item.status }}">
+                {% if item.status == 'pending' %}
+                    Menunggu
+                {% elif item.status == 'completed' %}
+                    Selesai
+                {% elif item.status == 'expired' %}
+                    Kadaluarsa
+                {% endif %}
+            </span>
+        </div>
+        <div class="history-date">Ditukar pada: {{ item.tanggal_penukaran|date:"d F Y, H:i" }}</div>
+        <div class="history-points">Poin yang digunakan: {{ item.poin_digunakan }} poin</div>
+    </div>
+    {% empty %}
+    <p>Anda belum pernah menukar voucher apapun.</p>
+    {% endfor %}
+</body>
+</html>
