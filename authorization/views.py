@@ -1,7 +1,8 @@
+import random
 from django.shortcuts import render, redirect
 from django.contrib.auth.hashers import make_password, check_password
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_protect
 from django.utils.crypto import get_random_string
 import logging
@@ -12,22 +13,138 @@ import qrcode
 from io import BytesIO
 import base64
 from .models import Pengguna, OTPDevice
+from django.http import HttpResponseForbidden
+from django.utils.http import url_has_allowed_host_and_scheme
+from functools import wraps
+from django.core.cache import cache
+from django.conf import settings
+import re
+from django.shortcuts import render, redirect
+from django.contrib.auth.hashers import make_password, check_password
+from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_protect
+from django.utils.crypto import get_random_string
+import logging
+import time
+import pyotp
+import qrcode
+from io import BytesIO
+import base64
+from .models import Pengguna, OTPDevice
+from authorization.middleware import SecurityMiddleware
+
+SESSION_TIMEOUT = 1800
 
 
+def rate_limit(key_prefix, limit=5, period=60, block_period=300):
+    """
+    Rate limiting decorator that can be applied to views
+    
+    Args:
+        key_prefix: Prefix for the cache key (e.g., 'login', 'signup')
+        limit: Maximum number of requests allowed in the period
+        period: Time period in seconds for the limit
+        block_period: Time in seconds to block if limit is exceeded
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        def wrapped_view(request, *args, **kwargs):
+            # Get client IP - consider X-Forwarded-For if behind proxy
+            ip = get_client_ip(request)
+            
+            # Create cache keys for this IP and endpoint
+            count_key = f"rl:{key_prefix}:{ip}:count"
+            block_key = f"rl:{key_prefix}:{ip}:blocked"
+            
+            # Check if client is blocked
+            if cache.get(block_key):
+                return HttpResponseForbidden(
+                    "Too many attempts. Please try again later."
+                )
+            
+            # Get current request count
+            request_count = cache.get(count_key, 0)
+            
+            # If under limit, increment and proceed
+            if request_count < limit:
+                # Initialize or increment counter
+                if request_count == 0:
+                    cache.set(count_key, 1, period)
+                else:
+                    cache.incr(count_key)
+                return view_func(request, *args, **kwargs)
+            else:
+                # Block the client for a period
+                cache.set(block_key, True, block_period)
+                logger.warning(f"Rate limit exceeded for {ip} on {key_prefix}")
+                return HttpResponseForbidden(
+                    "Too many attempts. Please try again later."
+                )
+        return wrapped_view
+    return decorator
+
+def get_client_ip(request):
+    """Extract the client IP from request, considering proxy headers"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0].strip()
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+def validate_password_strength(password):
+    """Validate password meets security requirements"""
+    errors = []
+    
+    if len(password) < 10:
+        errors.append("Password must be at least 10 characters long")
+        
+    if not re.search(r'[A-Z]', password):
+        errors.append("Password must contain at least one uppercase letter")
+        
+    if not re.search(r'[a-z]', password):
+        errors.append("Password must contain at least one lowercase letter")
+        
+    if not re.search(r'[0-9]', password):
+        errors.append("Password must contain at least one number")
+        
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        errors.append("Password must contain at least one special character")
+        
+    return errors
+
+def sanitize_input(input_string):
+    """Basic input sanitization"""
+    if input_string is None:
+        return ''
+    # Remove potentially dangerous characters
+    sanitized = re.sub(r'[<>"\';]', '', input_string)
+    return sanitized
+
+def validate_redirect_url(url, allowed_hosts=None):
+    """Validate that a URL is safe for redirection"""
+    if allowed_hosts is None:
+        allowed_hosts = [settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'localhost']
+    
+    # Use the current Django function instead of the deprecated is_safe_url
+    return url_has_allowed_host_and_scheme(
+        url=url,
+        allowed_hosts=allowed_hosts,
+        require_https=settings.SESSION_COOKIE_SECURE
+    )
 
 # Setup logging for audit trail
 logger = logging.getLogger('auth_audit')
 logger.setLevel(logging.INFO)
 
-# Session timeout (30 minutes)
-SESSION_TIMEOUT = 1800
-
+@rate_limit('sign_up', limit=5, period=300)  # 5 attempts in 5 minutes
 @csrf_protect
 def sign_up(request):
     if request.method == 'POST':
-        # Input validation - prevent tampering/injection
-        nama_lengkap = request.POST.get('nama_lengkap', '').strip()
-        email = request.POST.get('email', '').strip().lower()
+        # Sanitize inputs
+        nama_lengkap = sanitize_input(request.POST.get('nama_lengkap', '')).strip()
+        email = sanitize_input(request.POST.get('email', '')).strip().lower()
         password = request.POST.get('password', '')
         
         # Validate input data
@@ -39,85 +156,176 @@ def sign_up(request):
             errors['email'] = 'Email harus diisi'
         elif not is_valid_email(email):
             errors['email'] = 'Format email tidak valid'
-            
-        if not password:
-            errors['password'] = 'Password harus diisi'
-        elif len(password) < 8:
-            errors['password'] = 'Password minimal 8 karakter'
+        
+        # Enhanced password validation
+        password_errors = validate_password_strength(password)
+        if password_errors:
+            errors['password'] = password_errors[0]  # Show first error
         
         if errors:
             return render(request, 'sign_up.html', {'errors': errors})
             
         # Check if email already exists
         if Pengguna.objects.filter(email=email).exists():
+            # Don't leak existence of account - delay response
+            time.sleep(1)  # Add random delay to prevent timing attacks
             logger.info(f"Registration attempt with existing email: {email}")
             return render(request, 'sign_up.html', {
                 'error': 'Email sudah terdaftar. Silakan gunakan email lain atau login.'
             })
         
-        # Simulate OTP verification for now
-        # In a production environment, you would implement actual OTP
-        # For the prototype, we'll proceed directly to account creation
+        # Store registration data in session with expiry
+        request.session['signup_data'] = {
+            'nama_lengkap': nama_lengkap,
+            'email': email,
+            'password': make_password(password),
+            'timestamp': time.time()  # Add timestamp for expiry check
+        }
         
-        try:
-            # Create user with hashed password
-            pengguna = Pengguna.objects.create(
-                email=email,
-                password=make_password(password)
-            )
-            
-            # Parse name
-            nama_parts = nama_lengkap.split(' ', 1)
-            nama_depan = nama_parts[0]
-            nama_belakang = nama_parts[1] if len(nama_parts) > 1 else ''
-            
-            # Create user profile with default points
-            Normal.objects.create(
-                pengguna=pengguna,
-                nama_depan=nama_depan,
-                nama_belakang=nama_belakang,
-                nama=nama_lengkap,
-                poin=0
-            )
-            
-            # Log successful registration
-            logger.info(f"User registered successfully: {email}")
-            
-            messages.success(request, 'Akun berhasil dibuat! Silakan login.')
-            return redirect('auth:sign_in')
-            
-        except Exception as e:
-            logger.error(f"Registration error: {str(e)}")
-            return render(request, 'sign_up.html', {
-                'error': 'Terjadi kesalahan saat mendaftarkan akun.'
-            })
+        # Set session expiry for security
+        request.session.set_expiry(600)  # 10 minutes
+        
+        # Redirect to OTP setup
+        return redirect('auth:setup_new_account')
             
     return render(request, 'sign_up.html')
 
+@rate_limit('sign_in', limit=5, period=300)  # 5 attempts in 5 minutes
 @csrf_protect
 def sign_in(request):
     if request.method == 'POST':
-        email = request.POST.get('email', '').strip().lower()
+        email = sanitize_input(request.POST.get('email', '')).strip().lower()
         password = request.POST.get('password', '')
+        
+        # Add delay to prevent timing attacks
+        time.sleep(0.5 + (random.random() * 0.5))  # 0.5-1.0 second delay
         
         try:
             pengguna = Pengguna.objects.get(email=email)
             
             # Verify password
             if check_password(password, pengguna.password):
-                # Store email in session temporarily
-                request.session['temp_login_email'] = email
+                # Check for account lockout
+                if is_account_locked(pengguna.id):
+                    logger.warning(f"Login attempt on locked account: {email}")
+                    return render(request, 'sign_in.html', 
+                                  {'error': 'Account temporarily locked. Please try again later.'})
                 
-                # Redirect to OTP verification
-                return redirect('auth:verify_otp')
+                # Store user information in session temporarily
+                request.session['temp_user_id'] = pengguna.id
+                request.session['temp_login_email'] = email
+                request.session['login_timestamp'] = time.time()
+                request.session.set_expiry(300)  # 5 minute expiry for temp session
+                
+                # Reset failed login attempts
+                reset_failed_login_attempts(pengguna.id)
+                
+                # Check if user has OTP set up
+                try:
+                    OTPDevice.objects.get(pengguna=pengguna)
+                    return redirect('auth:verify_otp')
+                except OTPDevice.DoesNotExist:
+                    return redirect('auth:setup_otp')
             else:
                 # Invalid password
+                increment_failed_login_attempts(pengguna.id)
                 return render(request, 'sign_in.html', {'error': 'Email atau password salah'})
                 
         except Pengguna.DoesNotExist:
+            # Don't leak account existence - generic message
             return render(request, 'sign_in.html', {'error': 'Email atau password salah'})
             
-    return render(request, 'sign_in.html')
+    # Set secure headers for login page
+    response = render(request, 'sign_in.html')
+    add_security_headers(response)
+    return response
+
+def is_account_locked(user_id):
+    """Check if account is locked due to failed attempts"""
+    key = f"account_lock:{user_id}"
+    return cache.get(key, False)
+
+def increment_failed_login_attempts(user_id):
+    """Track failed login attempts and lock account if threshold reached"""
+    key = f"failed_login:{user_id}"
+    attempts = cache.get(key, 0)
+    attempts += 1
+    
+    # Lock account after 5 failed attempts
+    if attempts >= 5:
+        logger.warning(f"Account locked due to failed login attempts: user_id={user_id}")
+        cache.set(f"account_lock:{user_id}", True, 1800)  # Lock for 30 minutes
+        # Reset the counter
+        cache.delete(key)
+    else:
+        # Set with expiry of 30 minutes
+        cache.set(key, attempts, 1800)
+
+def reset_failed_login_attempts(user_id):
+    """Reset failed login attempts counter on successful login"""
+    cache.delete(f"failed_login:{user_id}")
+
+def increment_failed_otp_attempts(user_id):
+    """Track failed OTP attempts"""
+    key = f"failed_otp:{user_id}"
+    attempts = cache.get(key, 0)
+    attempts += 1
+    
+    # Lock account after 3 failed OTP attempts
+    if attempts >= 3:
+        logger.warning(f"Account locked due to failed OTP attempts: user_id={user_id}")
+        cache.set(f"account_lock:{user_id}", True, 1800)  # Lock for 30 minutes
+        cache.delete(key)
+    else:
+        cache.set(key, attempts, 1800)
+
+def clear_login_session(request):
+    """Clear sensitive session data"""
+    keys = ['temp_user_id', 'temp_login_email', 'login_timestamp', 'next_url']
+    for key in keys:
+        if key in request.session:
+            del request.session[key]
+
+def setup_secure_session(request, pengguna):
+    """Set up secure session after successful authentication"""
+    # Clear temporary login data
+    clear_login_session(request)
+    
+    # Set authenticated session data
+    request.session['user_id'] = pengguna.id
+    request.session['user_email'] = pengguna.email
+    request.session['authenticated_at'] = time.time()
+    
+    # Set session to expire after 30 minutes of inactivity
+    request.session.set_expiry(1800)
+    
+    # Check if user is admin
+    try:
+        Admin.objects.get(pengguna=pengguna)
+        request.session['is_admin'] = True
+    except Admin.DoesNotExist:
+        request.session['is_admin'] = False
+
+def add_security_headers(response):
+    """Add security headers to response"""
+    # Content Security Policy
+    response['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; object-src 'none';"
+    
+    # Prevent MIME sniffing
+    response['X-Content-Type-Options'] = 'nosniff'
+    
+    # XSS protection
+    response['X-XSS-Protection'] = '1; mode=block'
+    
+    # Referrer policy
+    response['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    
+    # Frame options
+    response['X-Frame-Options'] = 'DENY'
+    
+    return response
+
+
 
 def logout(request):
     # Log the logout event
@@ -154,75 +362,6 @@ def has_permission(request, required_permission):
 
 def generate_otp_secret():
     return pyotp.random_base32()
-
-from django.shortcuts import render, redirect
-from django.contrib.auth.hashers import make_password, check_password
-from django.contrib import messages
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_protect
-from django.utils.crypto import get_random_string
-import logging
-import time
-from .models import Pengguna, Normal, Admin
-import pyotp
-import qrcode
-from io import BytesIO
-import base64
-from .models import Pengguna, OTPDevice
-
-
-
-# Setup logging for audit trail
-logger = logging.getLogger('auth_audit')
-logger.setLevel(logging.INFO)
-
-# Session timeout (30 minutes)
-SESSION_TIMEOUT = 1800
-
-@csrf_protect
-def sign_up(request):
-    if request.method == 'POST':
-        # Input validation - prevent tampering/injection
-        nama_lengkap = request.POST.get('nama_lengkap', '').strip()
-        email = request.POST.get('email', '').strip().lower()
-        password = request.POST.get('password', '')
-        
-        # Validate input data
-        errors = {}
-        if not nama_lengkap:
-            errors['nama_lengkap'] = 'Nama lengkap harus diisi'
-        
-        if not email:
-            errors['email'] = 'Email harus diisi'
-        elif not is_valid_email(email):
-            errors['email'] = 'Format email tidak valid'
-            
-        if not password:
-            errors['password'] = 'Password harus diisi'
-        elif len(password) < 8:
-            errors['password'] = 'Password minimal 8 karakter'
-        
-        if errors:
-            return render(request, 'sign_up.html', {'errors': errors})
-            
-        # Check if email already exists
-        if Pengguna.objects.filter(email=email).exists():
-            logger.info(f"Registration attempt with existing email: {email}")
-            return render(request, 'sign_up.html', {
-                'error': 'Email sudah terdaftar. Silakan gunakan email lain atau login.'
-            })
-        
-        # Instead of creating user immediately, store registration data in session
-        request.session['signup_data'] = {
-            'nama_lengkap': nama_lengkap,
-            'email': email,
-            'password': make_password(password)
-        }
-        
-        # Redirect to OTP setup for new account
-        return redirect('auth:setup_new_account')
-            
-    return render(request, 'sign_up.html')
 
 def setup_new_account(request):
     """Handle OTP setup for new accounts during registration"""
@@ -322,37 +461,6 @@ def setup_new_account(request):
             'email': email
         })
 
-@csrf_protect
-def sign_in(request):
-    if request.method == 'POST':
-        email = request.POST.get('email', '').strip().lower()
-        password = request.POST.get('password', '')
-        
-        try:
-            pengguna = Pengguna.objects.get(email=email)
-            
-            # Verify password
-            if check_password(password, pengguna.password):
-                # Store user information in session temporarily
-                request.session['temp_user_id'] = pengguna.id
-                request.session['temp_login_email'] = email
-                
-                # Check if user has OTP set up
-                try:
-                    otp_device = OTPDevice.objects.get(pengguna=pengguna)
-                    # User has OTP device, redirect to verification
-                    return redirect('auth:verify_otp')
-                except OTPDevice.DoesNotExist:
-                    # User doesn't have OTP set up yet, redirect to setup
-                    return redirect('auth:setup_otp')
-            else:
-                # Invalid password
-                return render(request, 'sign_in.html', {'error': 'Email atau password salah'})
-                
-        except Pengguna.DoesNotExist:
-            return render(request, 'sign_in.html', {'error': 'Email atau password salah'})
-            
-    return render(request, 'sign_in.html')
 def logout(request):
     # Log the logout event
     if 'user_email' in request.session:
@@ -479,48 +587,56 @@ def setup_otp(request):
             messages.warning(request, 'We encountered an issue setting up two-factor authentication. Please try again.')
             return redirect('auth:sign_in')
 
-
+@rate_limit('verify_otp', limit=3, period=300)  # 3 attempts in 5 minutes
 def verify_otp(request):
-    email = request.session.get('temp_login_email') or request.session.get('user_email')
+    email = request.session.get('temp_login_email')
+    
+    # Session timeout check
+    login_timestamp = request.session.get('login_timestamp')
+    if not email or not login_timestamp or (time.time() - login_timestamp > 300):
+        # Session expired or invalid
+        messages.warning(request, 'Your session has expired. Please log in again.')
+        clear_login_session(request)
+        return redirect('auth:sign_in')
 
     if request.method == 'POST':
-        otp_code = request.POST.get('otp_code')
-
+        otp_code = sanitize_input(request.POST.get('otp_code', ''))
+        
         try:
             pengguna = Pengguna.objects.get(email=email)
             otp_device = OTPDevice.objects.get(pengguna=pengguna)
             totp = pyotp.TOTP(otp_device.secret_key)
 
             if totp.verify(otp_code):
-                request.session['user_id'] = pengguna.id
-                request.session['user_email'] = pengguna.email
+                # Complete login and establish secure session
+                setup_secure_session(request, pengguna)
                 messages.success(request, 'Login successful!')
                 
-                if 'temp_login_email' in request.session:
-                    del request.session['temp_login_email']
-
-                try:
-                    admin = Admin.objects.get(pengguna=pengguna)
-                    request.session['is_admin'] = True
-                except Admin.DoesNotExist:
-                    request.session['is_admin'] = False
-                return redirect('main:landing_page')
+                # Log successful login
+                logger.info(f"Successful login with 2FA: {email}")
+                
+                # Redirect to requested URL or default
+                next_url = request.session.get('next_url', 'main:landing_page')
+                if not validate_redirect_url(next_url):
+                    next_url = 'main:landing_page'
+                
+                return redirect(next_url)
             else:
-                messages.warning(request, 'The verification code you entered is incorrect. Please try again.')
+                messages.warning(request, 'Invalid verification code. Please try again.')
+                
+                # Increment failed OTP attempts
+                increment_failed_otp_attempts(pengguna.id)
+                
                 return render(request, 'verify_otp.html', {'email': email})
-        except (Pengguna.DoesNotExist, OTPDevice.DoesNotExist):
-            # Log the actual error
-            logger.error(f"Error during OTP verification: User or OTP device not found for email {email}")
-            messages.warning(request, 'We encountered an issue with your account. Please try signing in again.')
-            return redirect('auth:sign_in')
+                
         except Exception as e:
-            # Log any unexpected errors
-            logger.error(f"Unexpected error during OTP verification: {str(e)}")
-            messages.warning(request, 'An unexpected error occurred. Please try again later.')
+            logger.error(f"OTP verification error: {str(e)}")
+            messages.warning(request, 'An error occurred. Please try again.')
             return redirect('auth:sign_in')
 
-    return render(request, 'verify_otp.html', {'email': email})
-
+    response = render(request, 'verify_otp.html', {'email': email})
+    add_security_headers(response)
+    return response
 
 # Helper function to generate QR code
 def get_qr_code(secret_key, email):
@@ -535,3 +651,4 @@ def get_qr_code(secret_key, email):
         logger.error(f"Error generating QR code: {str(e)}")
         # Return empty string or a default image if error occurs
         return ""
+    

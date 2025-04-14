@@ -10,3 +10,5 @@ python-dotenv
 pyotp
 qrcode
 pillow
+django-ratelimit
+django-ipware==4.0.2
