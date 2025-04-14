@@ -12,3 +12,4 @@ qrcode
 pillow
 django-ratelimit
 django-ipware==4.0.2
+django-ratelimit==4.0.0
