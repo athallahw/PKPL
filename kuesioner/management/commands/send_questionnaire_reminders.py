@@ -6,7 +6,7 @@ from kuesioner.models import DailyQuestionnaire
 from datetime import datetime, timedelta
 
 class Command(BaseCommand):
-    help = 'Sends questionnaire reminders to users who haven\'t filled out today\'s questionnaire'
+    help = 'Sends questionnaire reminders to users who haven\'t filled out today\'s questionnaire. Should be scheduled to run daily at 12 PM (GMT+7).'
 
     def handle(self, *args, **options):
         # Get current date in local timezone
@@ -27,7 +27,7 @@ class Command(BaseCommand):
                     # Send email reminder
                     send_mail(
                         'Pengingat Kuesioner Harian PKPL',
-                        'Selamat malam, jangan lupa mengisi kuesioner harian kesehatan hari ini',
+                        'Selamat siang, jangan lupa mengisi kuesioner harian kesehatan hari ini',
                         None,  # Will use EMAIL_HOST_USER from settings
                         [user.email],
                         fail_silently=False,
