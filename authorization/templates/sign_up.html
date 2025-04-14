@@ -1,25 +1,51 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up</title>
-</head>
-<body>
-    <h2>Sign Up</h2>
-    <form method="POST">
+{% extends 'base.html' %}
+
+{% block title %}Sign Up - PKPL Health Tracker{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-header">
+        <h2>Create Your Account</h2>
+        <p>Join PKPL Health Tracker to start improving your lifestyle</p>
+    </div>
+    
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+    
+    {% if errors %}
+    <div class="alert alert-danger">
+        <ul style="margin: 0; padding-left: 20px;">
+            {% for field, message in errors.items %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    <form method="post" action="{% url 'auth:sign_up' %}">
         {% csrf_token %}
-        <label for="nama_lengkap">Nama Lengkap:</label>
-        <input type="text" name="nama_lengkap" placeholder="Full Name" required>
+        <div class="form-group">
+            <label for="nama_lengkap">Full Name</label>
+            <input type="text" name="nama_lengkap" id="nama_lengkap" class="form-control" required>
+        </div>
         
-        <label for="email">Email:</label>
-        <input type="email" name="email" placeholder="Enter your email" required>
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" name="email" id="email" class="form-control" required>
+        </div>
         
-        <label for="password">Password:</label>
-        <input type="password" name="password" placeholder="Enter your password" required>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" name="password" id="password" class="form-control" required>
+            <small style="color: var(--gray);">Password must be at least 8 characters long</small>
+        </div>
         
-        <button type="submit">Sign Up</button>
+        <button type="submit" class="btn btn-primary btn-block">Create Account</button>
     </form>
-    <a href="{% url 'auth:sign_up' %}" class="button">Sign Up</a>
-</body>
-</html>
+    
+    <div class="auth-footer">
+        Already have an account? <a href="{% url 'auth:sign_in' %}">Log in</a>
+    </div>
+</div>
+{% endblock %}

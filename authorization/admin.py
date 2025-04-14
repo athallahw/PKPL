@@ -1,9 +1,22 @@
 from django.contrib import admin
-from .models import Role, Permission, Role_Permission, Pengguna, Admin, Normal
+from .models import Role, Permission, Role_Permission, Pengguna, Admin, Normal, AppIcon, OTPDevice
 
 admin.site.site_header = 'PKPL Admin'
 admin.site.site_title = 'PKPL Admin Portal'
 admin.site.index_title = 'Welcome to PKPL Admin Portal'
+
+@admin.register(AppIcon)
+class AppIconAdmin(admin.ModelAdmin):
+    list_display = ('name', 'created_at', 'image_preview')
+    search_fields = ('name', 'description')
+    
+    def image_preview(self, obj):
+        if obj.image:
+            return f'<img src="{obj.image.url}" width="50" height="50" />'
+        return "No Image"
+    
+    image_preview.allow_tags = True
+    image_preview.short_description = 'Preview'
 
 # Role admin configuration
 @admin.register(Role)
