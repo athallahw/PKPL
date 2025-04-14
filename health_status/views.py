@@ -6,6 +6,18 @@ import uuid
 from django.contrib import messages
 from authorization.models import Pengguna
 from kuesioner.models import DailyQuestionnaire
+import re
+import logging
+
+
+# Konfigurasi logger untuk mencatat pesan ke terminal
+logger = logging.getLogger('django')
+handler = logging.StreamHandler()  # Menampilkan log ke terminal
+handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 # Create your views here.
 
@@ -20,17 +32,28 @@ def show_status(Request) :
         user = Pengguna.objects.get(id=user_id)
     except Pengguna.DoesNotExist:
         return redirect('auth:sign_in')
+    
+    logger.info("Pengguna mengakses status kesehatan")
 
     all_dates = DailyQuestionnaire.objects.filter(user=user).order_by('-date').values_list('date', flat=True)
+    
+   
 
     selected_date = Request.GET.get('date')
+
+# ganti sesuai view-mu
     if selected_date:
-        data = DailyQuestionnaire.objects.filter(user=user, date=selected_date).first()
+        if selected_date and not re.match(r'^\d{4}-\d{2}-\d{2}$', selected_date):
+            # Log pesan error ke terminal
+            logger.error(f"Format tanggal tidak valid. Tanggal yang diberikan: {selected_date}")
+            return redirect('main:landing_page')
+        data = DailyQuestionnaire.objects.filter(user=user, date=selected_date)
     else:
         data = DailyQuestionnaire.objects.filter(user=user).first()
     
     if not data:
         messages.error(Request, "Belum ada data yang diisi.")
+        logger.error("Belum ada data yang diisi")
         return render(Request, "health_report.html")  # Atau redirect ke form
 
    

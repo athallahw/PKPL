@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path
 from health_status import views
 
-app_name = 'statuskesehatan'
+app_name = 'health_status'
 
 urlpatterns = [
     path('', views.show_status, name='show_status'),

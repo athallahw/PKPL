@@ -51,9 +51,13 @@
     {% if messages %}
         {% for message in messages %}
             <div class="alert">{{ message }}</div>
+            <div style="margin-bottom: 20px;">
+                <a href="javascript:history.back()" style="text-decoration:none; color:#3498db;">← Kembali</a>
+            </div>
         {% endfor %}
     {% endif %}
 
+    {% if not messages %}
     {% if BMI %}
         <div class="section">
             <h3>Metabolisme</h3>
@@ -94,5 +98,6 @@
     </form>
 
 </div>
+{% endif %}
 </body>
 </html>

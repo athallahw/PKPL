@@ -159,7 +159,7 @@
         <div class="welcome-text">Halo, {{ user_name }}
         </div>
         <div class="icons">
-            <a href="{% url 'statuskesehatan:show_status' %}" class="status-button">Cek Status Kesehatan</a>
+            <a href="{% url 'health_status:show_status' %}" class="status-button">Cek Status Kesehatan</a>
             <img src="/static/bell-icon.png" alt="Notifikasi" width="24">
             <img src="/static/profile-icon.png" alt="Profil" width="24">
             {% if is_logged_in %}
