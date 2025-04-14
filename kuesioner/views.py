@@ -17,14 +17,16 @@ def questionnaire_form(request):
     except Pengguna.DoesNotExist:
         return redirect('auth:sign_in')
 
+    # Check if user has already submitted today's questionnaire
+    today = timezone.now().date()
+    already_submitted = DailyQuestionnaire.objects.filter(user=user, date=today).exists()
+    
+    if already_submitted:
+        messages.warning(request, 'Anda sudah mengisi kuesioner hari ini.')
+        return render(request, 'kuesioner/form.html', {'already_submitted': True})
+    
     if request.method == 'POST':
         try:
-            # Check if user has already submitted today's questionnaire
-            today = timezone.now().date()
-            if DailyQuestionnaire.objects.filter(user=user, date=today).exists():
-                messages.warning(request, 'Anda sudah mengisi kuesioner hari ini.')
-                return redirect('kuesioner:questionnaire_form')
-            
             # Validate required fields
             required_fields = [
                 'weight', 'height', 'gender', 'age', 'water_intake',
@@ -84,7 +86,7 @@ def questionnaire_form(request):
             messages.error(request, f'Terjadi kesalahan: {str(e)}')
             return redirect('kuesioner:questionnaire_form')
     
-    return render(request, 'kuesioner/form.html')
+    return render(request, 'kuesioner/form.html', {'already_submitted': False})
 
 def questionnaire_history(request):
     # Check if user is logged in via session

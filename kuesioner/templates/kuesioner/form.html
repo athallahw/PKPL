@@ -137,6 +137,13 @@
         .text-center {
             text-align: center;
         }
+
+        .notification-card {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -154,102 +161,112 @@
                     {% endfor %}
                 {% endif %}
 
-                <form method="POST" class="needs-validation" novalidate>
-                    {% csrf_token %}
-                    
-                    <div class="mb-3">
-                        <h5>Informasi Dasar</h5>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label for="weight" class="form-label">Berat Badan (kg)</label>
-                                <input type="number" step="0.1" class="form-control" id="weight" name="weight" required>
-                                <div class="invalid-feedback">Mohon masukkan berat badan Anda.</div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <label for="height" class="form-label">Tinggi Badan (cm)</label>
-                                <input type="number" step="0.1" class="form-control" id="height" name="height" required>
-                                <div class="invalid-feedback">Mohon masukkan tinggi badan Anda.</div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label for="gender" class="form-label">Jenis Kelamin</label>
-                                <select class="form-select" id="gender" name="gender" required>
-                                    <option value="">Pilih jenis kelamin</option>
-                                    <option value="pria">Pria</option>
-                                    <option value="wanita">Wanita</option>
-                                </select>
-                                <div class="invalid-feedback">Mohon pilih jenis kelamin Anda.</div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <label for="age" class="form-label">Usia (tahun)</label>
-                                <input type="number" class="form-control" id="age" name="age" required>
-                                <div class="invalid-feedback">Mohon masukkan usia Anda.</div>
-                            </div>
-                        </div>
+                {% if already_submitted %}
+                    <div class="notification-card">
+                        <h4>Anda sudah mengisi kuesioner hari ini</h4>
+                        <p>Terima kasih telah mengisi kuesioner harian PKPL. Anda telah mengisi kuesioner untuk hari ini dan tidak perlu mengisi lagi.</p>
+                        <p>Silakan kembali besok untuk mengisi kuesioner berikutnya.</p>
+                        <a href="{% url 'kuesioner:questionnaire_history' %}" class="btn btn-primary">Lihat Riwayat Kuesioner</a>
                     </div>
-
-                    <div class="mb-3">
-                        <h5>Informasi Gaya Hidup</h5>
+                {% else %}
+                    <form method="POST" class="needs-validation" novalidate>
+                        {% csrf_token %}
                         
                         <div class="mb-3">
-                            <label for="water_intake" class="form-label">Asupan Air (ml)</label>
-                            <input type="number" class="form-control" id="water_intake" name="water_intake" required>
-                            <div class="invalid-feedback">Mohon masukkan asupan air Anda.</div>
+                            <h5>Informasi Dasar</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="weight" class="form-label">Berat Badan (kg)</label>
+                                    <input type="number" step="0.1" class="form-control" id="weight" name="weight" required>
+                                    <div class="invalid-feedback">Mohon masukkan berat badan Anda.</div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="height" class="form-label">Tinggi Badan (cm)</label>
+                                    <input type="number" step="0.1" class="form-control" id="height" name="height" required>
+                                    <div class="invalid-feedback">Mohon masukkan tinggi badan Anda.</div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="gender" class="form-label">Jenis Kelamin</label>
+                                    <select class="form-select" id="gender" name="gender" required>
+                                        <option value="">Pilih jenis kelamin</option>
+                                        <option value="pria">Pria</option>
+                                        <option value="wanita">Wanita</option>
+                                    </select>
+                                    <div class="invalid-feedback">Mohon pilih jenis kelamin Anda.</div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="age" class="form-label">Usia (tahun)</label>
+                                    <input type="number" class="form-control" id="age" name="age" required>
+                                    <div class="invalid-feedback">Mohon masukkan usia Anda.</div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="sport_frequency" class="form-label">Frekuensi Olahraga (1.2-1.9)</label>
-                            <input type="number" step="0.1" min="1.2" max="1.9" class="form-control" id="sport_frequency" name="sport_frequency" required>
-                            <div class="form-text">1.2: Sedentary, 1.375: Light, 1.55: Moderate, 1.725: Active, 1.9: Very Active</div>
-                            <div class="invalid-feedback">Mohon masukkan frekuensi olahraga Anda.</div>
+                            <h5>Informasi Gaya Hidup</h5>
+                            
+                            <div class="mb-3">
+                                <label for="water_intake" class="form-label">Asupan Air (ml)</label>
+                                <input type="number" class="form-control" id="water_intake" name="water_intake" required>
+                                <div class="invalid-feedback">Mohon masukkan asupan air Anda.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="sport_frequency" class="form-label">Frekuensi Olahraga (1.2-1.9)</label>
+                                <input type="number" step="0.1" min="1.2" max="1.9" class="form-control" id="sport_frequency" name="sport_frequency" required>
+                                <div class="form-text">1.2: Sedentary, 1.375: Light, 1.55: Moderate, 1.725: Active, 1.9: Very Active</div>
+                                <div class="invalid-feedback">Mohon masukkan frekuensi olahraga Anda.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="smoke_frequency" class="form-label">Jumlah Rokok per Hari</label>
+                                <input type="number" class="form-control" id="smoke_frequency" name="smoke_frequency" required>
+                                <div class="invalid-feedback">Mohon masukkan jumlah rokok per hari.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="stress_level" class="form-label">Tingkat Stres (1-10)</label>
+                                <input type="range" class="form-range" id="stress_level" name="stress_level" min="1" max="10" required>
+                                <div class="text-center" id="stress_value">5</div>
+                                <div class="invalid-feedback">Mohon pilih tingkat stres Anda.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="alcohol_frequency" class="form-label">Jumlah Minum Alkohol per Minggu</label>
+                                <input type="number" class="form-control" id="alcohol_frequency" name="alcohol_frequency" required>
+                                <div class="invalid-feedback">Mohon masukkan jumlah minum alkohol per minggu.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="daily_calories" class="form-label">Asupan Kalori Harian</label>
+                                <input type="number" class="form-control" id="daily_calories" name="daily_calories" required>
+                                <div class="invalid-feedback">Mohon masukkan asupan kalori harian Anda.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="sleep_amount" class="form-label">Jumlah Tidur (jam)</label>
+                                <input type="number" step="0.5" class="form-control" id="sleep_amount" name="sleep_amount" required>
+                                <div class="invalid-feedback">Mohon masukkan jumlah tidur Anda.</div>
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="smoke_frequency" class="form-label">Jumlah Rokok per Hari</label>
-                            <input type="number" class="form-control" id="smoke_frequency" name="smoke_frequency" required>
-                            <div class="invalid-feedback">Mohon masukkan jumlah rokok per hari.</div>
+                        <div style="display: flex; gap: 10px;">
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">Kirim Kuesioner</button>
+                            <a href="{% url 'kuesioner:questionnaire_history' %}" class="btn" style="flex: 1; background-color: #6c757d; color: white;">Lihat Riwayat</a>
                         </div>
-
-                        <div class="mb-3">
-                            <label for="stress_level" class="form-label">Tingkat Stres (1-10)</label>
-                            <input type="range" class="form-range" id="stress_level" name="stress_level" min="1" max="10" required>
-                            <div class="text-center" id="stress_value">5</div>
-                            <div class="invalid-feedback">Mohon pilih tingkat stres Anda.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="alcohol_frequency" class="form-label">Jumlah Minum Alkohol per Minggu</label>
-                            <input type="number" class="form-control" id="alcohol_frequency" name="alcohol_frequency" required>
-                            <div class="invalid-feedback">Mohon masukkan jumlah minum alkohol per minggu.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="daily_calories" class="form-label">Asupan Kalori Harian</label>
-                            <input type="number" class="form-control" id="daily_calories" name="daily_calories" required>
-                            <div class="invalid-feedback">Mohon masukkan asupan kalori harian Anda.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="sleep_amount" class="form-label">Jumlah Tidur (jam)</label>
-                            <input type="number" step="0.5" class="form-control" id="sleep_amount" name="sleep_amount" required>
-                            <div class="invalid-feedback">Mohon masukkan jumlah tidur Anda.</div>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 10px;">
-                        <button type="submit" class="btn btn-primary" style="flex: 1;">Kirim Kuesioner</button>
-                        <a href="{% url 'kuesioner:questionnaire_history' %}" class="btn" style="flex: 1; background-color: #6c757d; color: white;">Lihat Riwayat</a>
-                    </div>
-                </form>
+                    </form>
+                {% endif %}
             </div>
         </div>
     </div>
 
+    {% if not already_submitted %}
     <script>
         // Stress level slider value display
         const stressSlider = document.getElementById('stress_level');
@@ -310,5 +327,6 @@
                 })
         })()
     </script>
+    {% endif %}
 </body>
 </html> 
