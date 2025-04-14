@@ -18,6 +18,7 @@ urlpatterns = [
 
     path('voucher/', include('voucher.urls')),
     path('kuesioner/', include('kuesioner.urls')),
+    path('statuskesehatan/', include('health_status.urls')),
 ]
 
 if settings.DEBUG:

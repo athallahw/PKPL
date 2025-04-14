@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Laporan Kesehatan Harian</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 30px;
+            background-color: #f2f7fc;
+            color: #333;
+        }
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+        }
+        h1 {
+            text-align: center;
+            color: #2980b9;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section h3 {
+            color: #2c3e50;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+        }
+        .value {
+            margin-left: 10px;
+            color: #34495e;
+        }
+        .alert {
+            padding: 15px;
+            background-color: #ffdddd;
+            border-left: 5px solid #f44336;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Status Kesehatan Anda</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    {% if BMI %}
+        <div class="section">
+            <h3>Metabolisme</h3>
+            <p><strong>BMI:</strong><span class="value">{{ BMI|floatformat:2 }}</span></p>
+            <p><strong>BMR:</strong><span class="value">{{ BMR|floatformat:2 }} kkal</span></p>
+            <p><strong>TDEE:</strong><span class="value">{{ TDEE|floatformat:2 }} kkal</span></p>
+        </div>
+
+        <div class="section">
+            <h3>Risiko Penyakit</h3>
+            <p><strong>Jantung:</strong><span class="value">{{ resiko_penyakit_jantung }}</span></p>
+            <p><strong>Paru-paru:</strong><span class="value">{{ resiko_penyakit_paru }}</span></p>
+            <p><strong>Hati:</strong><span class="value">{{ resiko_penyakit_hati }}</span></p>
+        </div>
+
+        <div class="section">
+            <h3>Kebugaran & Hidrasi</h3>
+            <p><strong>Kebugaran Badan:</strong><span class="value">{{ Kebugaran_badan }}</span></p>
+            <p><strong>Status Hidrasi:</strong><span class="value">{{ status_hidrasi }}</span></p>
+        </div>
+    {% else %}
+        <div class="alert">
+            <p>Belum ada data yang tersedia. Silakan isi kuesioner harian terlebih dahulu.</p>
+        </div>
+    {% endif %}
+
+    <div style="margin-bottom: 20px;">
+        <a href="javascript:history.back()" style="text-decoration:none; color:#3498db;">← Kembali</a>
+    </div>
+    
+    <form method="get" style="margin-bottom: 30px;">
+        <label for="date">Lihat laporan berdasarkan tanggal:</label>
+        <select name="date" id="date" onchange="this.form.submit()">
+            {% for d in available_dates %}
+                <option value="{{ d }}" {% if d == selected_date %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
+</div>
+</body>
+</html>

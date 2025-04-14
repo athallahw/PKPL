@@ -1,35 +1,63 @@
-from django.shortcuts import render
+
 from datetime import datetime
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.db import connection
 import uuid
 from django.contrib import messages
+from authorization.models import Pengguna
+from kuesioner.models import DailyQuestionnaire
 
 # Create your views here.
 
-def show_status(Request) :
-    #untuk sementara dummy dulu
-    Weight = 85
-    Height = 165
-    Gender = 'pria'
-    Age = '23'
-    WaterIntake = 2000
-    SportFreq = 1.375
-    SmokeFreq = 5
-    Stress = 6
-    AlcoholFreq = 0
-    DailyCalories = 1900
-    SleepAmount = 6
-    Date = 1
-    context = generate_status(Weight, Height, Gender, Age, WaterIntake, SportFreq, SmokeFreq, Stress, AlcoholFreq, DailyCalories, SleepAmount, Date)
 
-    return render(Request, "main.html", context)
+def show_status(Request) :
+    
+    if 'user_id' not in Request.session:
+        return redirect('auth:sign_in')
+    
+    user_id = Request.session.get('user_id')
+    try:
+        user = Pengguna.objects.get(id=user_id)
+    except Pengguna.DoesNotExist:
+        return redirect('auth:sign_in')
+
+    all_dates = DailyQuestionnaire.objects.filter(user=user).order_by('-date').values_list('date', flat=True)
+
+    selected_date = Request.GET.get('date')
+    if selected_date:
+        data = DailyQuestionnaire.objects.filter(user=user, date=selected_date).first()
+    else:
+        data = DailyQuestionnaire.objects.filter(user=user).first()
+    
+    if not data:
+        messages.error(Request, "Belum ada data yang diisi.")
+        return render(Request, "health_report.html")  # Atau redirect ke form
+
+   
+    context = generate_status(
+        Weight=data.weight,
+        Height=data.height, 
+        Gender=data.gender,
+        Age=data.age,
+        WaterIntake=data.water_intake,
+        SportFreq=data.sport_frequency,
+        SmokeFreq=data.smoke_frequency,
+        Stress=data.stress_level,
+        AlcoholFreq=data.alcohol_frequency,
+        DailyCalories=data.daily_calories,
+        SleepAmount=data.sleep_amount,
+        Date=data.date
+    )
+    context["available_dates"] = all_dates
+    context["selected_date"] = data.date
+
+    return render(Request, "health_report.html", context)
 
 def generate_status(Weight, Height, Gender, Age, WaterIntake, SportFreq, SmokeFreq, Stress, AlcoholFreq, DailyCalories, SleepAmount, Date) :
-    BMI = Weight / (Height * Height)
+    BMI = Weight / (Height/100 * Height/100)
     BMR = 0
     
-    if Gender == "pria" :
+    if Gender == "Pria" :
         BMR += (Weight * 10) + (Height * 6.25) - (5 * Age) + 5
         
     else :
@@ -85,7 +113,7 @@ def resiko_jantung(BMI, SportFreq, SmokeFreq, Stress, AlcoholFreq):
     else:
         return "Risiko Tinggi"
 
-def kategori_kebugaran(BMI, WHtR, SportFreq, TDEE, Tidur, Stres, DailyCalories):
+def kategori_kebugaran(BMI,SportFreq, TDEE, Tidur, Stres, DailyCalories):
     point = 0
 
     Kalori = abs(TDEE - DailyCalories)
@@ -99,7 +127,6 @@ def kategori_kebugaran(BMI, WHtR, SportFreq, TDEE, Tidur, Stres, DailyCalories):
 
     # Menentukan poin berdasarkan kategori
     point += hitung_poin(BMI, bmi_kategori)
-    point += hitung_poin(WHtR, whtr_kategori)
     point += hitung_poin(SportFreq, sport_kategori)
     point += hitung_poin(Kalori, kalori_kategori)
     point += hitung_poin(Tidur, tidur_kategori)

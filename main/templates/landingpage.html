@@ -84,6 +84,19 @@
             text-decoration: none;
         }
 
+        .status-button {
+            background-color: #1cf744;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
         .features-section h2 {
             margin-bottom: 15px;
         }
@@ -143,8 +156,10 @@
 </head>
 <body>
     <div class="header">
-        <div class="welcome-text">Halo, {{ user_name }}</div>
+        <div class="welcome-text">Halo, {{ user_name }}
+        </div>
         <div class="icons">
+            <a href="{% url 'statuskesehatan:show_status' %}" class="status-button">Cek Status Kesehatan</a>
             <img src="/static/bell-icon.png" alt="Notifikasi" width="24">
             <img src="/static/profile-icon.png" alt="Profil" width="24">
             {% if is_logged_in %}
