@@ -8,6 +8,7 @@ from authorization.models import Pengguna
 from kuesioner.models import DailyQuestionnaire
 import re
 import logging
+from django.contrib.auth.decorators import login_required
 
 
 # Konfigurasi logger untuk mencatat pesan ke terminal
@@ -22,6 +23,7 @@ logger.setLevel(logging.INFO)
 # Create your views here.
 
 
+@login_required
 def show_status(Request) :
     
     if 'user_id' not in Request.session:
