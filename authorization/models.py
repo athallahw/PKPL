@@ -31,6 +31,7 @@ class Role_Permission(models.Model):
         
     def __str__(self):
         return f"{self.role.role_name} - {self.permission.permission_name}"
+    
 
 class Pengguna(models.Model):
     email = models.CharField(max_length=255, unique=True)
