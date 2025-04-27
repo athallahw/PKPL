@@ -308,19 +308,27 @@ class OWASPSecurityTest(ViewTestMixin, TestCase):
     @patch('authorization.views.rate_limit', lambda *args, **kwargs: lambda f: f)
     def test_a07_authentication_failures(self):
         """Test for identification and authentication failures (OWASP A07:2021)"""
-        # Test multi-factor authentication
-        # Verify that OTP verification is required after successful password login
-        with patch('authorization.views.check_password', return_value=True):
-            data = {
-                'email': 'test@example.com',
-                'password': self.password
-            }
-            
-            response = self.client.post(self.signin_url, data)
-            self.assertEqual(response.status_code, 302)  # Should redirect to OTP verification
-            
-            # Check redirect URL is to OTP verification
-            self.assertTrue('verify_otp' in response.url or 'setup_otp' in response.url)
+        # Create a test user with a secure password
+        test_user = Pengguna.objects.create(
+            email='test_otp@example.com',
+            password=make_password('SecurePassword123!')
+        )
+        
+        # Set up session with clean client
+        self.client = Client()
+        
+        # Attempt login with correct credentials
+        response = self.client.post(reverse('auth:sign_in'), {
+            'email': 'test_otp@example.com',
+            'password': 'SecurePassword123!'
+        }, follow=False)  # Don't follow redirects to catch the immediate redirect
+        
+        # Check that we're redirected to OTP setup or verification
+        # The actual URL pattern is "/auth/setup-otp/" not containing "setup_otp"
+        self.assertTrue(
+            '/auth/verify-otp/' in response.url or '/auth/setup-otp/' in response.url,
+            f"Expected redirect to OTP verification but got: {response.url}"
+        )
     
     def test_a08_software_data_integrity_failures(self):
         """Test for software and data integrity failures (OWASP A08:2021)"""
