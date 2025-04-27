@@ -155,32 +155,34 @@ class VoucherOWASPTestCase(TestCase):
             status='completed'
         ).exists())
 
-    # 9. A09:2021 - Security Logging and Monitoring Failures
     def test_security_logging_monitoring(self):
         """Test OWASP A09:2021 - Security Logging and Monitoring Failures di modul voucher"""
-        # FIX: Create a request with parameters that will definitely trigger suspicious activity
         request = HttpRequest()
         request.session = {'user_id': self.normal_user.id}
-        request.META = {'REMOTE_ADDR': '127.0.0.1', 'HTTP_X_FORWARDED_FOR': None}
+        request.META = {'REMOTE_ADDR': '127.0.0.1'}
         
-        # Mock the current hour to be 3 AM (suspicious time)
-        with patch('django.utils.timezone.now') as mock_now:
-            from datetime import datetime
-            mock_datetime = MagicMock()
-            mock_datetime.hour = 3  # Set to suspicious hour (1-5 AM)
-            mock_now.return_value = mock_datetime
+        with patch('voucher.views.check_throttling') as mock_throttle:
+            mock_throttle.return_value = (False, "")
             
-            # And also mock the log_security_event
-            with patch('voucher.views.log_security_event') as mock_log:
-                # Call with parameters that will trigger suspicion
-                # (using 95% of points is suspicious - threshold is 90%)
-                result = check_fraudulent_activity(request, self.voucher.id_voucher, 100, 95)
+            with patch('django.utils.timezone.now') as mock_now:
+                from datetime import datetime
+                from django.utils import timezone
                 
-                # Verify function returned True (suspicious)
-                self.assertTrue(result)
+                mock_date = timezone.make_aware(datetime(2023, 1, 1, 3, 0, 0))
+                mock_now.return_value = mock_date
                 
-                # Verify log was called
-                mock_log.assert_called()
+                with patch('voucher.views.log_security_event') as mock_log:
+                   
+                    result = check_fraudulent_activity(
+                        request, 
+                        self.voucher.id_voucher, 
+                        100,   
+                        95     
+                    )
+                    
+                    self.assertTrue(result)
+                    
+                    mock_log.assert_called()
 
 
 class CSRFVulnerabilityTest(TestCase):
