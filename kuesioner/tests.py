@@ -7,6 +7,10 @@ from django.http import HttpRequest
 from unittest.mock import patch, MagicMock
 from django.utils import timezone
 import datetime
+from kuesioner.models import DailyQuestionnaire
+from django.core import mail
+from io import StringIO
+from django.core.management import call_command
 
 class ViewTestMixin:
     """Mixin with common test methods to avoid duplication"""
@@ -299,3 +303,74 @@ class CSRFVulnerabilityTest(TestCase):
             }
         )
         self.assertNotEqual(response.status_code, 403)
+
+class QuestionnaireReminderTests(TestCase):
+    """Tests for the reminder functionality in the questionnaire system"""
+    
+    def setUp(self):
+        # Create user roles
+        self.user_role = Role.objects.create(role_name='pengguna')
+        
+        # Create test users
+        self.user1 = Pengguna.objects.create(
+            email='user1@example.com',
+            password=make_password('password123'),
+            role=self.user_role
+        )
+        self.user2 = Pengguna.objects.create(
+            email='user2@example.com',
+            password=make_password('password123'),
+            role=self.user_role
+        )
+        
+        # Set current date
+        self.today = timezone.now().date()
+        
+        # Create a questionnaire for user1 (but not for user2)
+        DailyQuestionnaire.objects.create(
+            user=self.user1,
+            weight=70.0,
+            height=175.0,
+            gender='pria',
+            age=30,
+            water_intake=2000,
+            sport_frequency=1.5,
+            smoke_frequency=0,
+            stress_level=3,
+            alcohol_frequency=0,
+            daily_calories=2000,
+            sleep_amount=8.0
+        )
+    
+    @patch('kuesioner.management.commands.send_questionnaire_reminders.send_mail')
+    def test_reminder_command(self, mock_send_mail):
+        """Test that the reminder command sends emails to the right users"""
+        # Call the command
+        out = StringIO()
+        call_command('send_questionnaire_reminders', stdout=out)
+        
+        # Check that email was only sent to user2 (who hasn't filled the questionnaire)
+        self.assertEqual(mock_send_mail.call_count, 1)
+        
+        # Check the called email address - Django's send_mail has subject, message, from_email, recipient_list (+ optional keywords)
+        args = mock_send_mail.call_args[0]
+        recipient_list = args[3]  # The recipient_list is the 4th argument
+        self.assertEqual(recipient_list, [self.user2.email])
+        
+        # Check that user1 (who has filled the questionnaire) didn't get an email
+        for call in mock_send_mail.call_args_list:
+            recipients = call[0][3]  # Get the recipient list from args
+            self.assertNotIn(self.user1.email, recipients)
+    
+    @patch('kuesioner.management.commands.send_questionnaire_reminders.send_mail')
+    def test_reminder_command_error_handling(self, mock_send_mail):
+        """Test that the reminder command handles errors properly"""
+        # Make the send_mail function raise an exception for testing
+        mock_send_mail.side_effect = Exception("Test error")
+        
+        # Call the command - should not raise exception even when email fails
+        out = StringIO()
+        call_command('send_questionnaire_reminders', stdout=out)
+        
+        # Check output for error message
+        self.assertIn("Failed to send reminder", out.getvalue())
